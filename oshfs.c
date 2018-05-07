@@ -49,7 +49,7 @@ int get_offset(int block_num){
     return *(int*)mem[block_num];
 }
 
-int get_next_block(int block_num){
+int get_next_block(int block_num){ //获取页链表中lock_num页的下一页
     if (!mem[block_num]) return -1;
     return *((int*)mem[block_num]+1);
 }
@@ -97,6 +97,20 @@ static void *get_mem(int block_num,int size){
 
 static void create_filenode(const char *filename, const struct stat *st)
 {
+    /*这个是创建一个新的文件节点的函数
+
+    find avail函数是找到一个空的页
+    setpage(i)是申请i号页的空间并且设置i号页的一些基础信息
+
+    getmem(i,size)是得到i号页里指定的大小的空间，返回这段空间开头的指针
+    然后刚开始的话就是获得一个node结构体大小的空间用来装描述这个文件的各种指针
+
+    然后继续在这个页里获取空间装这个文件的信息
+    getoffset(i)是获得i号页使用了多少空间
+
+    最后把文件节点插入到链表里，并且node->head记录下文件信息占据到多少空间
+    这样一个空文件就算创建完了*/
+
     int i;
     i=find_avail_block();
     set_page(i);
