@@ -18,25 +18,25 @@ typedef struct filenode {
     struct stat *st;
     struct filenode *next;
     struct filenode *last;
-}node;
+} node;
 
 static const size_t size = 4 * 1024 * 1024 * (size_t)1024;
 static void *mem[BLOCKNR];
-static int mem_offset[BLOCKNR]={};
+static int mem_offset[BLOCKNR]= {};
 size_t blocknr = BLOCKNR;
 size_t blocksize = BLOCKSIZE;
 int pagenum=0;
 
 //static struct filenode *root = NULL;
 
-int min(int a,int b){
+int min(int a,int b) {
     return a<b?a:b;
 }
 
-int find_avail_block(){
+int find_avail_block() {
     int i=pagenum;
-    for (i=(pagenum+1)%blocknr;i!=pagenum;i=(i+1)%blocknr){
-        if (!mem[i]){
+    for (i=(pagenum+1)%blocknr; i!=pagenum; i=(i+1)%blocknr) {
+        if (!mem[i]) {
             pagenum=i;
             return i;
         }
@@ -44,21 +44,21 @@ int find_avail_block(){
     return -1;
 }
 
-int get_offset(int block_num){
+int get_offset(int block_num) {
     if (!mem[block_num]) return -1;
     return *(int*)mem[block_num];
 }
 
-int get_next_block(int block_num){ //获取页链表中lock_num页的下一页
+int get_next_block(int block_num) { //获取页链表中lock_num页的下一页
     if (!mem[block_num]) return -1;
     return *((int*)mem[block_num]+1);
 }
 
 
 
-static int set_page(int block_num){
+static int set_page(int block_num) {
 
-    if (mem[block_num]){
+    if (mem[block_num]) {
         return -1;
     }
     mem[block_num]=mmap(NULL, blocksize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -67,15 +67,15 @@ static int set_page(int block_num){
     return 0;
 }
 
-void set_next_block(int cur_page){
+void set_next_block(int cur_page) {
     int next = find_avail_block();
     set_page(next);
     *((int*)mem[cur_page]+1)=next;
     *(int*)mem[cur_page]=blocksize;
 }
 
-static void *get_mem(int block_num,int size){
-    if (mem[block_num]==NULL){
+static void *get_mem(int block_num,int size) {
+    if (mem[block_num]==NULL) {
         return NULL;
     }
     int offset=*(int*)mem[block_num];
@@ -84,18 +84,17 @@ static void *get_mem(int block_num,int size){
     return mem[block_num]+offset;
 }
 
-void set_root(node *root){
+void set_root(node *root) {
     node **toroot;
     toroot=(node**)(mem[0]+head);
     *toroot=root;
 }
 
-node* get_root(){
+node* get_root() {
     return *(node**)(mem[0]+head);
 }
 
-static struct filenode *get_filenode(const char *name)
-{
+static struct filenode *get_filenode(const char *name) {
     node *node = get_root();
     while(node) {
         if(strcmp(node->filename, name + 1) != 0)
@@ -106,8 +105,7 @@ static struct filenode *get_filenode(const char *name)
     return NULL;
 }
 
-static void create_filenode(const char *filename, const struct stat *st)
-{
+static void create_filenode(const char *filename, const struct stat *st) {
     /*这个是创建一个新的文件节点的函数
 
     find avail函数是找到一个空的页
@@ -147,8 +145,7 @@ static void create_filenode(const char *filename, const struct stat *st)
 /*以上为自定义函数*/
 
 
-static void *oshfs_init(struct fuse_conn_info *conn)
-{
+static void *oshfs_init(struct fuse_conn_info *conn) {
     /*
     // Demo 1
     for(int i = 0; i < blocknr; i++) {
@@ -171,11 +168,10 @@ static void *oshfs_init(struct fuse_conn_info *conn)
     set_page(0);
     node **toroot=(node**)get_mem(0,sizeof(node*));
     *toroot=NULL;
-    return NULL;
+    return NULL;//在0号页存储文件节点的root指针
 }
 
-static int oshfs_getattr(const char *path, struct stat *stbuf)
-{
+static int oshfs_getattr(const char *path, struct stat *stbuf) {
     int ret = 0;
     struct filenode *node = get_filenode(path);
     if(strcmp(path, "/") == 0) {
@@ -189,8 +185,7 @@ static int oshfs_getattr(const char *path, struct stat *stbuf)
     return ret;
 }
 
-static int oshfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
-{
+static int oshfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
     struct filenode *node = get_root();
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
@@ -202,8 +197,7 @@ static int oshfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, of
     return 0;
 }
 
-static int oshfs_mknod(const char *path, mode_t mode, dev_t dev)
-{
+static int oshfs_mknod(const char *path, mode_t mode, dev_t dev) {
     struct stat st;
     st.st_mode = S_IFREG | 0644;
     st.st_uid = fuse_get_context()->uid;
@@ -214,21 +208,19 @@ static int oshfs_mknod(const char *path, mode_t mode, dev_t dev)
     return 0;
 }
 
-static int oshfs_open(const char *path, struct fuse_file_info *fi)
-{
+static int oshfs_open(const char *path, struct fuse_file_info *fi) {
     return 0;
 }
 
-static int oshfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
-{
+static int oshfs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
     node *node = get_filenode(path);
     if(offset + size > node->st->st_size)
         node->st->st_size = offset + size;
     int page_offset,complete=0,space=0;
     int cur_page=node->head_page,i;
     space=blocksize - node->head_size;
-    while (space<offset){
-        if (get_next_block(cur_page)==0){
+    while (space<offset) {
+        if (get_next_block(cur_page)==0) {
             set_next_block(cur_page);
         }
         space+=blocksize-head;
@@ -236,8 +228,8 @@ static int oshfs_write(const char *path, const char *buf, size_t size, off_t off
     }
     memcpy(mem[cur_page]+blocksize-(space-offset),buf,min(size,space-offset));
     complete+=space-offset;
-    while(complete<size){
-        if (get_next_block(cur_page)==0){
+    while(complete<size) {
+        if (get_next_block(cur_page)==0) {
             set_next_block(cur_page);
         }
         cur_page=get_next_block(cur_page);
@@ -248,13 +240,12 @@ static int oshfs_write(const char *path, const char *buf, size_t size, off_t off
     return size;
 }
 
-static int oshfs_truncate(const char *path, off_t size)
-{
+static int oshfs_truncate(const char *path, off_t size) {
     node *node = get_filenode(path);
     node->st->st_size = size;
     int space=blocksize-node->head_size,cur_page=node->head_page;
-    while (space<size){
-        if (get_next_block(cur_page)==0){
+    while (space<size) {
+        if (get_next_block(cur_page)==0) {
             set_next_block(cur_page);
         }
         cur_page=get_next_block(cur_page);
@@ -266,7 +257,7 @@ static int oshfs_truncate(const char *path, off_t size)
     int next;
     *((int*)mem[cur_page]+1)=0;
     cur_page=get_next_block(cur_page);
-    if (cur_page!=0){
+    if (cur_page!=0) {
         next=get_next_block(cur_page);
         munmap(mem[cur_page],blocksize);
         mem[cur_page]=NULL;
@@ -276,8 +267,7 @@ static int oshfs_truncate(const char *path, off_t size)
     return 0;
 }
 
-static int oshfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
-{
+static int oshfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
     node *node = get_filenode(path);
     int ret = size;
     int space=blocksize-node->head_size,cur_page=node->head_page;
@@ -285,16 +275,16 @@ static int oshfs_read(const char *path, char *buf, size_t size, off_t offset, st
 
     if(offset + size > node->st->st_size)
         ret = node->st->st_size - offset;
-   // memcpy(buf, node->content + offset, ret);
-/**/
-    while (space<offset){
+    // memcpy(buf, node->content + offset, ret);
+    /**/
+    while (space<offset) {
         cur_page = get_next_block(cur_page);
         space+=blocksize-head;
     }
     memcpy(buf, mem[cur_page]+blocksize-(space-offset), min(ret,space-offset));
 
     int complete=space-offset;
-    while (complete<ret){
+    while (complete<ret) {
         cur_page=get_next_block(cur_page);
         if (cur_page==0) break;
         memcpy(buf+complete,mem[cur_page]+head,min(ret-complete,blocksize-head));
@@ -305,25 +295,23 @@ static int oshfs_read(const char *path, char *buf, size_t size, off_t offset, st
 }
 
 
-static int oshfs_unlink(const char *path)
-{
+static int oshfs_unlink(const char *path) {
     // Not Implemented
     node *root = get_root();
     node *node = get_filenode(path);
     int cur_page=node->head_page,next;
-    if (!node->last){
+    if (!node->last) {
         root=node->next;
         if (root)
-        root->last=NULL;
-    }
-    else{
+            root->last=NULL;
+    } else {
         node->last->next=node->next;
     }
 
     if (node->next)
-    node->next->last=node->last;
+        node->next->last=node->last;
     /**/
-    while(cur_page){
+    while(cur_page) {
         next=get_next_block(cur_page);
         munmap(mem[cur_page],blocksize);
         mem[cur_page]=NULL;
@@ -346,7 +334,6 @@ static const struct fuse_operations op = {
     .unlink = oshfs_unlink,
 };
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     return fuse_main(argc, argv, &op, NULL);
 }
