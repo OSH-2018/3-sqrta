@@ -8,7 +8,7 @@
 #define MAX_NAME 255
 #define BLOCKNR (65536)
 #define BLOCKSIZE 65536
-#define head 40 //æ¯ä¸€å—å¤´éƒ¨çš„ç©ºé—´
+#define head 40 //Ã¿Ò»¿éÍ·²¿µÄ¿Õ¼ä
 
 typedef struct filenode {
     char *filename;
@@ -20,12 +20,11 @@ typedef struct filenode {
     struct filenode *last;
 } node;
 
-static const size_t size = 4 * 1024 * 1024 * (size_t)1024;
+//static const size_t size = 4 * 1024 * 1024 * (size_t)1024;
 static void *mem[BLOCKNR];
-static int mem_offset[BLOCKNR]= {};
 size_t blocknr = BLOCKNR;
 size_t blocksize = BLOCKSIZE;
-int pagenum=0;
+//int pagenum=0;
 
 //static struct filenode *root = NULL;
 
@@ -34,10 +33,11 @@ int min(int a,int b) {
 }
 
 int find_avail_block() {
-    int i=pagenum;
+    int pagenum = 
+    int i = *((int*)mem[0] + 1);
     for (i=(pagenum+1)%blocknr; i!=pagenum; i=(i+1)%blocknr) {
         if (!mem[i]) {
-            pagenum=i;
+            *((int*)mem[0] + 1) = i;
             return i;
         }
     }
@@ -49,7 +49,7 @@ int get_offset(int block_num) {
     return *(int*)mem[block_num];
 }
 
-int get_next_block(int block_num) { //è·å–é¡µé“¾è¡¨ä¸­lock_numé¡µçš„ä¸‹ä¸€é¡µ
+int get_next_block(int block_num) { //»ñÈ¡Ò³Á´±íÖĞlock_numÒ³µÄÏÂÒ»Ò³
     if (!mem[block_num]) return -1;
     return *((int*)mem[block_num]+1);
 }
@@ -98,7 +98,7 @@ static struct filenode *get_filenode(const char *name) {
     node *node = get_root();
     while(node) {
         if(strcmp(node->filename, name + 1) != 0)
-            node = node->next;
+            node = node->next;*((int*)mem[0] + 1
         else
             return node;
     }
@@ -106,19 +106,19 @@ static struct filenode *get_filenode(const char *name) {
 }
 
 static void create_filenode(const char *filename, const struct stat *st) {
-    /*è¿™ä¸ªæ˜¯åˆ›å»ºä¸€ä¸ªæ–°çš„æ–‡ä»¶èŠ‚ç‚¹çš„å‡½æ•°
+    /*Õâ¸öÊÇ´´½¨Ò»¸öĞÂµÄÎÄ¼ş½ÚµãµÄº¯Êı
 
-    find availå‡½æ•°æ˜¯æ‰¾åˆ°ä¸€ä¸ªç©ºçš„é¡µ
-    setpage(i)æ˜¯ç”³è¯·iå·é¡µçš„ç©ºé—´å¹¶ä¸”è®¾ç½®iå·é¡µçš„ä¸€äº›åŸºç¡€ä¿¡æ¯
+    find availº¯ÊıÊÇÕÒµ½Ò»¸ö¿ÕµÄÒ³
+    setpage(i)ÊÇÉêÇëiºÅÒ³µÄ¿Õ¼ä²¢ÇÒÉèÖÃiºÅÒ³µÄÒ»Ğ©»ù´¡ĞÅÏ¢
 
-    getmem(i,size)æ˜¯å¾—åˆ°iå·é¡µé‡ŒæŒ‡å®šçš„å¤§å°çš„ç©ºé—´ï¼Œè¿”å›è¿™æ®µç©ºé—´å¼€å¤´çš„æŒ‡é’ˆ
-    ç„¶ååˆšå¼€å§‹çš„è¯å°±æ˜¯è·å¾—ä¸€ä¸ªnodeç»“æ„ä½“å¤§å°çš„ç©ºé—´ç”¨æ¥è£…æè¿°è¿™ä¸ªæ–‡ä»¶çš„å„ç§æŒ‡é’ˆ
+    getmem(i,size)ÊÇµÃµ½iºÅÒ³ÀïÖ¸¶¨µÄ´óĞ¡µÄ¿Õ¼ä£¬·µ»ØÕâ¶Î¿Õ¼ä¿ªÍ·µÄÖ¸Õë
+    È»ºó¸Õ¿ªÊ¼µÄ»°¾ÍÊÇ»ñµÃÒ»¸önode½á¹¹Ìå´óĞ¡µÄ¿Õ¼äÓÃÀ´×°ÃèÊöÕâ¸öÎÄ¼şµÄ¸÷ÖÖÖ¸Õë
 
-    ç„¶åç»§ç»­åœ¨è¿™ä¸ªé¡µé‡Œè·å–ç©ºé—´è£…è¿™ä¸ªæ–‡ä»¶çš„ä¿¡æ¯
-    getoffset(i)æ˜¯è·å¾—iå·é¡µä½¿ç”¨äº†å¤šå°‘ç©ºé—´
+    È»ºó¼ÌĞøÔÚÕâ¸öÒ³Àï»ñÈ¡¿Õ¼ä×°Õâ¸öÎÄ¼şµÄĞÅÏ¢
+    getoffset(i)ÊÇ»ñµÃiºÅÒ³Ê¹ÓÃÁË¶àÉÙ¿Õ¼ä
 
-    æœ€åæŠŠæ–‡ä»¶èŠ‚ç‚¹æ’å…¥åˆ°é“¾è¡¨é‡Œï¼Œå¹¶ä¸”node->headè®°å½•ä¸‹æ–‡ä»¶ä¿¡æ¯å æ®åˆ°å¤šå°‘ç©ºé—´
-    è¿™æ ·ä¸€ä¸ªç©ºæ–‡ä»¶å°±ç®—åˆ›å»ºå®Œäº†*/
+    ×îºó°ÑÎÄ¼ş½Úµã²åÈëµ½Á´±íÀï£¬²¢ÇÒnode->head¼ÇÂ¼ÏÂÎÄ¼şĞÅÏ¢Õ¼¾İµ½¶àÉÙ¿Õ¼ä
+    ÕâÑùÒ»¸ö¿ÕÎÄ¼ş¾ÍËã´´½¨ÍêÁË*/
 
     int i;
     i=find_avail_block();
@@ -142,7 +142,7 @@ static void create_filenode(const char *filename, const struct stat *st) {
 }
 
 
-/*ä»¥ä¸Šä¸ºè‡ªå®šä¹‰å‡½æ•°*/
+/*ÒÔÉÏÎª×Ô¶¨Òåº¯Êı*/
 
 
 static void *oshfs_init(struct fuse_conn_info *conn) {
@@ -168,7 +168,8 @@ static void *oshfs_init(struct fuse_conn_info *conn) {
     set_page(0);
     node **toroot=(node**)get_mem(0,sizeof(node*));
     *toroot=NULL;
-    return NULL;//åœ¨0å·é¡µå­˜å‚¨æ–‡ä»¶èŠ‚ç‚¹çš„rootæŒ‡é’ˆ
+    *((int*)mem[0] + 1) = 1; //0ºÅÒ³µÄµÚÒ»¸öÊı´¢´æÂÖ×ªÑ°ÕÒ¿ÉĞĞÒ³µÄ±àºÅ£¬Ò»¿ªÊ¼´ÓµÚÒ»Ò³¿ªÊ¼
+    return NULL;//ÔÚ0ºÅÒ³´æ´¢ÎÄ¼ş½ÚµãµÄrootÖ¸Õë
 }
 
 static int oshfs_getattr(const char *path, struct stat *stbuf) {
