@@ -20,9 +20,8 @@ typedef struct filenode {
     struct filenode *last;
 } node;
 
-static const size_t size = 4 * 1024 * 1024 * (size_t)1024;
+//static const size_t size = 4 * 1024 * 1024 * (size_t)1024;
 static void *mem[BLOCKNR];
-static int mem_offset[BLOCKNR]= {};
 size_t blocknr = BLOCKNR;
 size_t blocksize = BLOCKSIZE;
 int pagenum=0;
