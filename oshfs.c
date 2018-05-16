@@ -33,8 +33,9 @@ int min(int a,int b) {
 }
 
 int find_avail_block() {
-    int i = *((int*)mem[0] + 1);
-    for (i=(pagenum+1)%blocknr; i!=pagenum; i=(i+1)%blocknr) {
+    int pagenum = *((int*)mem[0] + 1);
+    int i;
+    for (i = (pagenum+1)%blocknr; i!=pagenum; i=(i+1)%blocknr) {
         if (!mem[i]) {
             *((int*)mem[0] + 1) = i;
             return i;
@@ -97,7 +98,7 @@ static struct filenode *get_filenode(const char *name) {
     node *node = get_root();
     while(node) {
         if(strcmp(node->filename, name + 1) != 0)
-            node = node->next;*((int*)mem[0] + 1
+            node = node->next;
         else
             return node;
     }
